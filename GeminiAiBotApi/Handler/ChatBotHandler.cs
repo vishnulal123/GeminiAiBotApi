@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.WebUtilities;
 using Newtonsoft.Json;
 using System.Text;
 using System.Text.Json;
+using static GeminiAiBotApi.Dtos.GeminiChatModel.GeminiChat;
 
 namespace GeminiAiBotApi.Handler
 {
@@ -14,6 +15,7 @@ namespace GeminiAiBotApi.Handler
         {
             string apiKey = Environment.GetEnvironmentVariable("GOOGLE_API_KEY", EnvironmentVariableTarget.Machine) ?? ""; // add your gemini  api key
             string baseUrl = GeminiApiConstants.GeminiApiBaseUrl;
+            bool isFirstChat = false;
             var queryParams = new Dictionary<string, string?>()
             {
                {"key",apiKey}
@@ -37,8 +39,17 @@ namespace GeminiAiBotApi.Handler
             }
             else
             {
+                datas = cacheservice.GetFromCache(connectionId, chatId);
+                if (datas == null || datas.Count == 0) // First Chat
+                {
+                    isFirstChat = true;
+                }
                 AddDataToCache(connectionId, input, "user", chatId);
                 datas = cacheservice.GetFromCache(connectionId, chatId);
+            }
+            if (isFirstChat)
+            {
+                cacheservice.UpdateChatNameCache(connectionId, chatId, query);
             }
 
             var request = new
@@ -86,12 +97,12 @@ namespace GeminiAiBotApi.Handler
         {
 
             data.Add
-                (new
+                (new ChatMessage
                 {
                     Role = role,
-                    Parts = new List<Object>()
+                    Parts = new List<Part>()
                     {
-                        new
+                        new Part
                         {
                             Text = message,
                         }
@@ -102,12 +113,12 @@ namespace GeminiAiBotApi.Handler
         private void AddDataToCache(string connectionId, string message, string role, Guid chatId)
         {
             cacheservice.AddToCache
-            (connectionId, new
+            (connectionId, new ChatMessage
             {
                 Role = role,
-                Parts = new List<Object>()
+                Parts = new List<Part>()
                     {
-                        new
+                        new Part
                         {
                             Text = message,
                         }
