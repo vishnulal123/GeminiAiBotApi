@@ -38,6 +38,31 @@ namespace GeminiAiBotApi.Services
             return null;
         }
 
+        public List<ChatMessageModel>? GetAllChatByConnectionId(string key)
+        {
+            if (chatCache.TryGetValue(key, out List<ChatMessageModel>? value))
+            {
+                return value;
+            }
+            return null;
+        }
+
+        public bool UpdateChatNameCache(string key, Guid chatId, string name)
+        {
+            if (chatCache.TryGetValue(key, out List<ChatMessageModel>? value))
+            {
+                var data = value.Find(x => x.ChatId == chatId);
+                if (data != null)
+                {
+                    data.ChatName = name;
+                    return true;
+                }
+            }
+            return false;
+        }
+
+
+
         public void Clear()
         {
 
