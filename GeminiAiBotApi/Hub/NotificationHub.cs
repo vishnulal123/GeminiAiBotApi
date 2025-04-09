@@ -7,7 +7,7 @@
         public async Task SendMessage(string user, string message, Guid chatId)
         {
             var result = await chatBotHandler.GeminiAiBot(message, user, chatId);
-            await Clients.Caller.SendAsync("ReceiveMessage", "aiBot", result);
+            await Clients.Caller.SendAsync("ReceiveMessage", "AiBot", result);
         }
     }
 }

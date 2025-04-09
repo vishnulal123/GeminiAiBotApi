@@ -95,18 +95,17 @@ namespace GeminiAiBotApi.Handler
 
         private static void AddDataToList(List<Object> data, string message, string role)
         {
-
             data.Add
                 (new ChatMessage
                 {
                     Role = role,
-                    Parts = new List<Part>()
-                    {
+                    Parts =
+                    [
                         new Part
                         {
                             Text = message,
                         }
-                    }
+                    ]
                 });
         }
 
@@ -116,23 +115,14 @@ namespace GeminiAiBotApi.Handler
             (connectionId, new ChatMessage
             {
                 Role = role,
-                Parts = new List<Part>()
-                    {
+                Parts =
+                    [
                         new Part
                         {
                             Text = message,
                         }
-                    }
+                    ]
             }, chatId);
         }
     }
-
-
-
-
-
-
-
-
-
 }
