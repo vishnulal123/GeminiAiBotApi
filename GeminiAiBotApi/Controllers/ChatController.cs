@@ -14,5 +14,12 @@ namespace GeminiAiBotApi.Controllers
             var data = await Task.Run(() => chatHistoryHandler.GetAllChatByConnectionId(userId));
             return Ok(data);
         }
+        [HttpPost("UpdateChatName")]
+        public async Task<IActionResult> UpdateChatName(string userId, Guid chatId)
+        {
+            var data = await Task.Run(() => chatHistoryHandler.UpdateChatName(userId, chatId));
+            return Ok(data);
+        }
+
     }
 }
