@@ -6,7 +6,7 @@ using static GeminiAiBotApi.Dtos.GeminiChatModel.GeminiChat;
 
 namespace GeminiAiBotApi.Handler
 {
-    public class ChatHistoryHandler(ICacheservice cacheservice) : IChatHistoryHandler
+    public class ChatHistoryHandler(ICacheservice cacheservice, IChatBotHandler chatBotHandler) : IChatHistoryHandler
     {
         public async Task<List<ChatModel>> GetAllChatByConnectionId(string connectionId)
         {
@@ -23,5 +23,14 @@ namespace GeminiAiBotApi.Handler
             }).ToList();
             return chatsMessage;
         }
+
+        public async Task<bool> UpdateChatName(string connectionId, Guid chatId)
+        {
+            var chatName = await chatBotHandler.GeminiAiBot("Give a Title To This whole Chat in less than 5 words", connectionId, chatId, isUpdateName: true);
+            var result = await Task.Run(() => cacheservice.UpdateChatNameCache(connectionId, chatId, chatName));
+            return result;
+        }
+
+
     }
 }

@@ -11,7 +11,7 @@ namespace GeminiAiBotApi.Handler
 {
     public class ChatBotHandler(ICacheservice cacheservice) : IChatBotHandler
     {
-        public async Task<string> GeminiAiBot(string query, string connectionId, Guid chatId, bool isTempChat = false)
+        public async Task<string> GeminiAiBot(string query, string connectionId, Guid chatId, bool isTempChat = false, bool isUpdateName = false)
         {
             string apiKey = Environment.GetEnvironmentVariable("GOOGLE_API_KEY", EnvironmentVariableTarget.Machine) ?? ""; // add your gemini  api key
             string baseUrl = GeminiApiConstants.GeminiApiBaseUrl;
@@ -44,51 +44,62 @@ namespace GeminiAiBotApi.Handler
                 {
                     isFirstChat = true;
                 }
-                AddDataToCache(connectionId, input, "user", chatId);
-                datas = cacheservice.GetFromCache(connectionId, chatId);
+                if (isUpdateName && datas != null)
+                {
+                    AddDataToList(datas, query, "user");
+                }
+                else if (!isUpdateName)
+                {
+                    AddDataToCache(connectionId, input, "user", chatId);
+                    datas = cacheservice.GetFromCache(connectionId, chatId);
+                }
             }
-            if (isFirstChat)
+            if (isFirstChat && !isUpdateName)
             {
                 cacheservice.UpdateChatNameCache(connectionId, chatId, query);
             }
 
-            var request = new
+            if (datas != null && datas.Count > 0)
             {
-                Contents = datas,
-                GenerationConfig = new
+
+                var request = new
                 {
-                    GeminiApiConstants.Temperature,
-                    GeminiApiConstants.TopK,
-                    GeminiApiConstants.TopP,
-                    GeminiApiConstants.MaxOutputTokens,
-                    GeminiApiConstants.ResponseMimeType,
-                }
-            };
+                    Contents = datas,
+                    GenerationConfig = new
+                    {
+                        GeminiApiConstants.Temperature,
+                        GeminiApiConstants.TopK,
+                        GeminiApiConstants.TopP,
+                        GeminiApiConstants.MaxOutputTokens,
+                        GeminiApiConstants.ResponseMimeType,
+                    }
+                };
 
-            string jsonData = System.Text.Json.JsonSerializer.Serialize(request, options: options);
-            var content = new StringContent(jsonData, Encoding.UTF8, "application/json");
+                string jsonData = System.Text.Json.JsonSerializer.Serialize(request, options: options);
+                var content = new StringContent(jsonData, Encoding.UTF8, "application/json");
 
-            try
-            {
-                // Send the POST request
-                HttpResponseMessage response = await clent.PostAsync(uri, content);
-                // Ensure success status code
-                response.EnsureSuccessStatusCode();
-                // Read the response content
-
-                string responseContent = await response.Content.ReadAsStringAsync();
-                dynamic json = JsonConvert.DeserializeObject(responseContent) ?? new();
-                string output = json.candidates[0].content.parts[0].text;
-                string outputData = output.Replace("{", "").Replace("}", "");
-                if (!isTempChat)
+                try
                 {
-                    AddDataToCache(connectionId, outputData, "model", chatId);
+                    // Send the POST request
+                    HttpResponseMessage response = await clent.PostAsync(uri, content);
+                    // Ensure success status code
+                    response.EnsureSuccessStatusCode();
+                    // Read the response content
+
+                    string responseContent = await response.Content.ReadAsStringAsync();
+                    dynamic json = JsonConvert.DeserializeObject(responseContent) ?? new();
+                    string output = json.candidates[0].content.parts[0].text;
+                    string outputData = output.Replace("{", "").Replace("}", "");
+                    if (!isTempChat || !isUpdateName)
+                    {
+                        AddDataToCache(connectionId, outputData, "model", chatId);
+                    }
+                    return outputData;
                 }
-                return outputData;
-            }
-            catch (HttpRequestException e)
-            {
-                Console.WriteLine($"Request error: {e.Message}");
+                catch (HttpRequestException e)
+                {
+                    Console.WriteLine($"Request error: {e.Message}");
+                }
             }
             return string.Empty;
         }
