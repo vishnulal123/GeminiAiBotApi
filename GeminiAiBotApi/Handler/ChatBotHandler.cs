@@ -39,13 +39,16 @@ namespace GeminiAiBotApi.Handler
             }
             else
             {
-                datas = cacheservice.GetFromCache(connectionId, chatId);
-                if (datas == null || datas.Count == 0) // First Chat
+                var datas1 = cacheservice.GetFromCache(connectionId, chatId);
+                if (datas1 == null || datas1.Count == 0) // First Chat
                 {
                     isFirstChat = true;
                 }
-                if (isUpdateName && datas != null)
+                if (isUpdateName && datas1 != null)
                 {
+                    datas = new List<object>();
+                    datas.AddRange(datas1);
+
                     AddDataToList(datas, query, "user");
                 }
                 else if (!isUpdateName)
@@ -90,7 +93,7 @@ namespace GeminiAiBotApi.Handler
                     dynamic json = JsonConvert.DeserializeObject(responseContent) ?? new();
                     string output = json.candidates[0].content.parts[0].text;
                     string outputData = output.Replace("{", "").Replace("}", "");
-                    if (!isTempChat || !isUpdateName)
+                    if (!isTempChat && !isUpdateName)
                     {
                         AddDataToCache(connectionId, outputData, "model", chatId);
                     }
